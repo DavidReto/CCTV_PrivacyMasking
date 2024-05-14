@@ -1,19 +1,10 @@
 import cv2
-import sys
-import logging as log
 import datetime as dt
+import logging as log
 import numpy as np
-import os
-import math
-import face_recognition
-import threading
-import re
 import socket
 from time import sleep
 from PIL import Image
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
-from numpy import asarray
 from datetime import datetime
 
 def client_program():
@@ -31,7 +22,7 @@ def client_program():
     client_socket.connect((host, port))  # connect to the server
     while True:
         ret, frame = video_capture.read(0)
-
+        print(type(frame))
         # Resize frame of video to 1/4 size for faster face recognition processing
         #small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
@@ -49,13 +40,14 @@ def client_program():
         response = client_socket.recv(2097152)  # receive response
         try:
             frameResult = Image.frombytes("RGB", (rgb_small_frame.shape[1],rgb_small_frame.shape[0]), response)
+            frameResult = np.array(frameResult)
+            frameResult = cv2.cvtColor(frameResult, cv2.COLOR_BGR2RGB)
+            
+            cv2.imshow('Video', frameResult)
         except:
             print(response.decode())
             continue
-        frameResult = np.array(frameResult)
-        frameResult = cv2.cvtColor(frameResult, cv2.COLOR_BGR2RGB)
         
-        cv2.imshow('Video', frameResult)
         if cv2.waitKey(1) == ord('q'):
             break
 

@@ -1,22 +1,17 @@
 import cv2
-import sys
-import logging as log
 import datetime as dt
 import numpy as np
+import shutil
 import os
 import math
 import face_recognition
-import threading
 import re
 import socket
-import shutil
-from time import sleep
 from PIL import Image
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from numpy import asarray
 from datetime import datetime
-from natsort import os_sorted
 
 def face_confidence(face_distance:float, face_match_threshold=0.6) -> str:
     range = (1.0 - face_match_threshold)
@@ -28,11 +23,10 @@ def face_confidence(face_distance:float, face_match_threshold=0.6) -> str:
         value = (linear_val + ((1.0 - linear_val) * math.pow((linear_val - 0.5) * 2, 0.2))) * 100
         return str(round(value, 2)) + '%'
 
-def generate_video(images:list): 
-    now = datetime.now()
+def generate_video(images:list, now): 
     date_time: str = now.strftime("%H_%M_%S")
     monthVal: str  = now.strftime("%m")
-    dayVal: str  = now.strftime("%m")
+    dayVal: str  = now.strftime("%d")
     #tempPath = f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\footage\\{monthVal}\\tempframe' 
     vidPath = f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\footage\\{monthVal}\\{dayVal}' # make sure to use your folder 
     video_name = f'footage_{date_time}.avi'
@@ -68,7 +62,7 @@ def server_program():
     server_socket.listen(1)
     conn, address = server_socket.accept()  # accept new connection
     print("Connection from: " + str(address))
-    face_locations, face_encodings, blacklist_face_encodings, blacklist_face_names, record_face_encodings, record_face_names, images = ([] for i in range(7))
+    face_locations, face_encodings, blacklist_face_encodings, blacklist_face_names, record_face_encodings, images = ([] for i in range(6))
     pattern = re.compile(r"record_(\d+)\.png")
     counter_file: int = 0
     counter_temp_foot: int = 0
@@ -88,7 +82,6 @@ def server_program():
                             if match:
                                 counter_file += 1
                                 record_face_encodings.append(face_encoding)
-                                record_face_names.append(image)
                         except:
                             print("The Image either does't contain a face or the code can't identify one")
         elif month == 'blacklist':  
@@ -103,7 +96,7 @@ def server_program():
     while True:
         # receive data stream. it won't accept data packet greater than 1024 bytes
         now = datetime.now()
-        preciseTime = now.strftime("%d-%H_%M_%S_")
+        preciseTime = now.strftime("%H_%M_%S_")
         monthVal = now.strftime("%m")
         dayVal = now.strftime("%d")
         data = conn.recv(2097152)
@@ -132,11 +125,12 @@ def server_program():
         face_names: list = []
         face_keys: list = []
         face_ivs: list = []
+        face_id: list = []
         i: int = 0   
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
-            blacklist = face_recognition.compare_faces(blacklist_face_encodings, face_encoding)
-            record = face_recognition.compare_faces(record_face_encodings, face_encoding)
+            blacklist = face_recognition.compare_faces(blacklist_face_encodings, face_encoding,tolerance=0.5)
+            record = face_recognition.compare_faces(record_face_encodings, face_encoding,tolerance=0.5)
             name: str = "Unknown"
             confidence: str = '???'
 
@@ -189,11 +183,6 @@ def server_program():
         extrabyte: int = 0
         keyfacedata: str = ''
         for (top, right, bottom, left), name, key, iv in zip(face_locations, face_names, face_keys, face_ivs):
-            # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-            #top *= 4
-            #right *= 4
-            #bottom *= 4
-            #left *= 4
             if name == 'Unknown (???)':
                 #Saves the the locations of the faces in a string as top bottom left right, as well as the keys and iv for each one
                 keyfacedata += str(top) +'.'+ str(bottom) +'.'+ str(left) +'.'+ str(right) + '|' + str(key) + '|' + str(iv) + '\_/'
@@ -216,19 +205,26 @@ def server_program():
                 cv2.putText(frameServer, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1)
         footageFrame = Image.fromarray(frameServer)
         images.append(footageFrame)
-        #footageFrame.save(f"footage/{monthVal}/tempframe/temp_foot_{counter_temp_foot}.png")
         counter_temp_foot += 1
         frameServer.tobytes()
         conn.send(frameServer)  # send data to the client
-        anexInfo = preciseTime + '|' + keyfacedata
+        anexInfo = preciseTime + '@' + keyfacedata
         file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'a')
         file.write(anexInfo + "\n")
         file.close() 
     conn.close()  # close the connection
-    generate_video(images)
+    now = datetime.now()
+    date_time: str = now.strftime("%H_%M_%S")
+    source_file =  open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'rb')
+    destination_file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\KDInfo_{date_time}.txt', 'wb')
+    shutil.copyfileobj(source_file, destination_file)
+    source_file.close()
+    destination_file.close()
+    os.remove(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt')
+    generate_video(images ,now)
     
 
 #TODO add a check in case the video records the transition from one month to the next so that they get recorded in both
-#TODO when coding the part to check if the face is recognised add a functionaliity so that depending on whether the cops have a month, a day or an hour we can scope it down by checking if the file format containts day and hour and if it does only check files with the same hour in the folder for that day, this way it's faster to check
+#TODO make it so that the naming convention for the blacklisted faces is "PersonName_DateTheyWereBlacklisted"
 if __name__ == '__main__':
     server_program()
