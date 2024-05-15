@@ -27,13 +27,12 @@ def generate_video(images:list, now, key,iv,face_locations1):
     date_time: str = now.strftime("%H_%M_%S")
     monthVal: str  = now.strftime("%m")
     dayVal: str  = now.strftime("%d")
-    #tempPath = f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\footage\\{monthVal}\\tempframe' 
-    vidPath = f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\footage\\{monthVal}\\{dayVal}' # make sure to use your folder 
+    #tempPath = f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\footage\\{monthVal}\\tempframe' 
+    vidPath = f'C:\\Users\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\footage\\{monthVal}\\{dayVal}' # make sure to use your folder 
     video_name = f'footage_{date_time}.avi'
     os.chdir(vidPath) 
 
     frame =  np.array(images[0])
-    frame = frame[:, :, ::-1].copy() 
   
     # setting the frame width, height width 
     # the width, height of first image 
@@ -48,16 +47,32 @@ def generate_video(images:list, now, key,iv,face_locations1):
         bottom = face_locations1[counter][0][2]
         left = face_locations1[counter][0][3]
         image = np.array(image)
-        print(type(image))
         image_data = image[top:bottom, left:right]
+        #BGR
+        cv2.imwrite("face_before_%d.jpg" % counter, image_data)
+        image_data = image_data.tobytes()
+        video.write(cv2.cvtColor(image,cv2.COLOR_RGB2BGR)) 
+        counter +=1 
+    vidcap = cv2.VideoCapture(f'C:\\Users\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\footage\\{monthVal}\\{dayVal}\\{video_name}')
+    success,imageframe = vidcap.read()
+    count = 0
+    while success:
+        top = face_locations1[count][0][0]
+        right = face_locations1[count][0][1]
+        bottom = face_locations1[count][0][2]
+        left = face_locations1[count][0][3]
+        key:bytes = key
+        iv:bytes = iv
+        image_data = imageframe[top:bottom, left:right]
+        cv2.imwrite("face_after_%d.jpg" % count, cv2.cvtColor(image_data,cv2.COLOR_RGB2BGR))
         image_data = image_data.tobytes()
         decrypt_cipher = AES.new(key, AES.MODE_CFB, iv)
         decryptImage = decrypt_cipher.decrypt(image_data)
         img = Image.frombytes("RGB", (right-left,bottom-top), decryptImage)
-        image[top:bottom, left:right] = img
-        image1 = image[:, :, ::-1].copy() 
-        video.write(image1) 
-        counter +=1 
+        img = np.array(img)
+        cv2.imwrite("decrypted_face_%d.jpg" % count, img)      
+        success,imageframe = vidcap.read()
+        count += 1
     # Deallocating memories taken for window creation 
     cv2.destroyAllWindows()  
     video.release() 
@@ -222,25 +237,26 @@ def server_program():
                 cv2.rectangle(frameServer, (left, top), (right, bottom), (0, 0, 255), 2)
                 cv2.rectangle(frameServer, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
                 cv2.putText(frameServer, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1)
-            
-        footageFrame = Image.fromarray(frameServer)
+
+   
+        footageFrame = Image.fromarray(frameServer,"RGB")
         images.append(footageFrame)
         counter_temp_foot += 1
         frameServer.tobytes()
         conn.send(frameServer)  # send data to the client
         anexInfo = preciseTime.encode('utf-8') + '@'.encode('utf-8') + keyfacedata
-        file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'ab')
+        file = open(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'ab')
         file.write(anexInfo + b"\n") 
         file.close() 
     conn.close()  # close the connection
     now = datetime.now()
     date_time: str = now.strftime("%H_%M_%S")
-    source_file =  open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'rb')
-    destination_file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\KDInfo_{date_time}.txt', 'wb')
+    source_file =  open(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'rb')
+    destination_file = open(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\KDInfo_{date_time}.txt', 'wb')
     shutil.copyfileobj(source_file, destination_file)
     source_file.close()
     destination_file.close()
-    os.remove(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt')
+    os.remove(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt')
     generate_video(images ,now, key , iv , face_locations1)
     
 

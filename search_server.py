@@ -226,10 +226,13 @@ def server_program():
                                     key:bytes = framedict[x]['key']
                                     iv:bytes = framedict[x]['iv']
                                     image_data = imageframe[top:bottom, left:right]
-                                    image_data = image_data.tobytes()  
+                                    cv2.imwrite("face_before_%d.jpg" % count, image_data)
+                                    image_data = image_data.tobytes()
                                     decrypt_cipher = AES.new(key, AES.MODE_CFB, iv)
                                     decryptImage = decrypt_cipher.decrypt(image_data)
                                     img = Image.frombytes("RGB", (right-left,bottom-top), decryptImage)
+                                    img = np.array(img)
+                                    cv2.imwrite("face_after_%d.jpg" % count, img)
                                     imageframe[top:bottom, left:right] = img
                             cv2.imwrite("frame%d.jpg" % count, imageframe)     # save frame as JPEG file      
                             success,imageframe = vidcap.read()
