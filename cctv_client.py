@@ -32,7 +32,7 @@ def client_program():
         # datetime object containing current date and time
         now = datetime.now()
         date_time = now.strftime("%d_%m_%Y_%H:%M:%S.%f")
-        anexData = '/_/@/_'.encode('utf8') + str(rgb_small_frame.shape[1]).encode('utf8')  +'/_/@/_'.encode('utf8') + str(rgb_small_frame.shape[0]).encode('utf8') +'/_/@/_'.encode('utf8') + date_time.encode('utf8')  
+        anexData = '/_/@/_'.encode('utf-8') + str(rgb_small_frame.shape[1]).encode('utf-8')  +'/_/@/_'.encode('utf-8') + str(rgb_small_frame.shape[0]).encode('utf-8') +'/_/@/_'.encode('utf-8') + date_time.encode('utf-8')  
         bytes_rgb_small_frame =  rgb_small_frame.tobytes()
         bytes_rgb_small_frame = bytes_rgb_small_frame + anexData
 

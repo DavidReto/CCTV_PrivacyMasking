@@ -23,7 +23,7 @@ def face_confidence(face_distance:float, face_match_threshold=0.6) -> str:
         value = (linear_val + ((1.0 - linear_val) * math.pow((linear_val - 0.5) * 2, 0.2))) * 100
         return str(round(value, 2)) + '%'
 
-def generate_video(images:list, now): 
+def generate_video(images:list, now, key,iv,face_locations1): 
     date_time: str = now.strftime("%H_%M_%S")
     monthVal: str  = now.strftime("%m")
     dayVal: str  = now.strftime("%d")
@@ -31,7 +31,7 @@ def generate_video(images:list, now):
     vidPath = f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\footage\\{monthVal}\\{dayVal}' # make sure to use your folder 
     video_name = f'footage_{date_time}.avi'
     os.chdir(vidPath) 
-  
+
     frame =  np.array(images[0])
     frame = frame[:, :, ::-1].copy() 
   
@@ -40,19 +40,33 @@ def generate_video(images:list, now):
     height, width, layers = frame.shape 
   
     video = cv2.VideoWriter(video_name, 0, 5, (width, height))  
-  
     # Appending the images to the video one by one 
+    counter =0
     for image in images: 
+        top = face_locations1[counter][0][0]
+        right = face_locations1[counter][0][1]
+        bottom = face_locations1[counter][0][2]
+        left = face_locations1[counter][0][3]
         image = np.array(image)
-        image = image[:, :, ::-1].copy() 
-        video.write(image)  
-      
+        print(type(image))
+        image_data = image[top:bottom, left:right]
+        image_data = image_data.tobytes()
+        decrypt_cipher = AES.new(key, AES.MODE_CFB, iv)
+        decryptImage = decrypt_cipher.decrypt(image_data)
+        img = Image.frombytes("RGB", (right-left,bottom-top), decryptImage)
+        image[top:bottom, left:right] = img
+        image1 = image[:, :, ::-1].copy() 
+        video.write(image1) 
+        counter +=1 
     # Deallocating memories taken for window creation 
     cv2.destroyAllWindows()  
-    video.release()  # releasing the video generated 
+    video.release() 
 
 def server_program():
     # get the hostname
+    keys=[]
+    ivs=[]
+    locations=[]
     host = socket.gethostname()
     port = 5000  # initiate port no above 1024
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # get instance
@@ -92,7 +106,8 @@ def server_program():
                     blacklist_face_encodings.append(face_encoding)
                     blacklist_face_names.append(image)
                 except:
-                    print("The Image either does't contain a face or the code can't identify one")                            
+                    print("The Image either does't contain a face or the code can't identify one")   
+    face_locations1 = []                      
     while True:
         # receive data stream. it won't accept data packet greater than 1024 bytes
         now = datetime.now()
@@ -104,10 +119,10 @@ def server_program():
             # if data is not received break
             break
         #Server would start here 
-        testlist = data.split('/_/@/_'.encode('utf8'))
+        testlist = data.split('/_/@/_'.encode('utf-8'))
         timestamp = testlist.pop(-1)
-        frame_height = int(testlist.pop(-1).decode('utf8'))
-        frame_width = int(testlist.pop(-1).decode('utf8'))
+        frame_height = int(testlist.pop(-1).decode('utf-8'))
+        frame_width = int(testlist.pop(-1).decode('utf-8'))
         image = b''.join(testlist)
         try:
             TimeFrame = Image.frombytes("RGB", (frame_width,frame_height), image)
@@ -129,8 +144,8 @@ def server_program():
         i: int = 0   
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
-            blacklist = face_recognition.compare_faces(blacklist_face_encodings, face_encoding,tolerance=0.5)
-            record = face_recognition.compare_faces(record_face_encodings, face_encoding,tolerance=0.5)
+            blacklist = face_recognition.compare_faces(blacklist_face_encodings, face_encoding,tolerance=0.7)
+            record = face_recognition.compare_faces(record_face_encodings, face_encoding,tolerance=0.7)
             name: str = "Unknown"
             confidence: str = '???'
 
@@ -165,10 +180,13 @@ def server_program():
                 '''this is where we will generate a new key for each person in case they don't exist yet'''
                 image = Image.fromarray(frameServer)
                 box = face_locations[i]
-                image = image.crop((box[0], box[3]-box[3]* 40/100, box[2]+box[2]* 5/100, box[1]))     
+                height = box[2]-box[0]
+                width = box[1]-box[3]
+                #takes location values from (LEFT,TOP,RIGHT,BOTTOM)
+                image = image.crop((box[3] -(width* 25/100), box[0]-(height* 25/100) , box[1]+(width* 25/100) , box[2]+(height* 25/100))) 
                 key = get_random_bytes(16) 
                 iv = get_random_bytes(16) 
-                keyform = '/_/@/_'.encode('utf8') + key + '/_/@/_'.encode('utf8') + iv
+                keyform = '/_/@/_'.encode('utf-8') + key + '/_/@/_'.encode('utf-8') + iv
                 counter_file += 1
                 image.save(f"faces/{monthVal}/{dayVal}/record_{counter_file}.png") 
                 with open(f"faces/{monthVal}/{dayVal}/record_{counter_file}.png", "ab") as f: 
@@ -181,12 +199,13 @@ def server_program():
         # Display the results
         block_size: int = 16
         extrabyte: int = 0
-        keyfacedata: str = ''
+        keyfacedata: bytes = b''
         for (top, right, bottom, left), name, key, iv in zip(face_locations, face_names, face_keys, face_ivs):
             if name == 'Unknown (???)':
+                face_locations1.append(face_locations)
                 #Saves the the locations of the faces in a string as top bottom left right, as well as the keys and iv for each one
-                keyfacedata += str(top) +'.'+ str(bottom) +'.'+ str(left) +'.'+ str(right) + '|' + str(key) + '|' + str(iv) + '\_/'
-                cipher = AES.new(key, AES.MODE_CFB, iv)
+                keyfacedata += (str(top) +'.'+ str(bottom) +'.'+ str(left) +'.'+ str(right)).encode('utf-8') + '|'.encode('utf-8') + key + '|'.encode('utf-8') + iv + '\_/'.encode('utf-8')
+                cipher = AES.new(key, AES.MODE_CFB)
                 image_data = frameServer[top:bottom, left:right]
                 image_data = image_data.tobytes()  
                 remainder = len(image_data) % block_size
@@ -203,14 +222,15 @@ def server_program():
                 cv2.rectangle(frameServer, (left, top), (right, bottom), (0, 0, 255), 2)
                 cv2.rectangle(frameServer, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
                 cv2.putText(frameServer, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1)
+            
         footageFrame = Image.fromarray(frameServer)
         images.append(footageFrame)
         counter_temp_foot += 1
         frameServer.tobytes()
         conn.send(frameServer)  # send data to the client
-        anexInfo = preciseTime + '@' + keyfacedata
-        file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'a')
-        file.write(anexInfo + "\n")
+        anexInfo = preciseTime.encode('utf-8') + '@'.encode('utf-8') + keyfacedata
+        file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'ab')
+        file.write(anexInfo + b"\n") 
         file.close() 
     conn.close()  # close the connection
     now = datetime.now()
@@ -221,7 +241,7 @@ def server_program():
     source_file.close()
     destination_file.close()
     os.remove(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt')
-    generate_video(images ,now)
+    generate_video(images ,now, key , iv , face_locations1)
     
 
 #TODO add a check in case the video records the transition from one month to the next so that they get recorded in both

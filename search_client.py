@@ -36,7 +36,7 @@ def client_program(filename:str ,startdate:str ,enddate:str ):
     frameResult = np.array(im)
     frameResult = cv2.cvtColor(frameResult, cv2.COLOR_BGR2RGB)
     byteimage = frameResult.tobytes()
-    anexData = '/_/@/_'.encode('utf8')+ str(frameResult.shape[1]).encode('utf8') + '/_/@/_'.encode('utf8')+ str(frameResult.shape[0]).encode('utf8') +'/_/@/_'.encode('utf8') + startdate.encode('utf8')  +'/_/@/_'.encode('utf8') + enddate.encode('utf8')
+    anexData = '/_/@/_'.encode('utf-8')+ str(frameResult.shape[1]).encode('utf-8') + '/_/@/_'.encode('utf-8')+ str(frameResult.shape[0]).encode('utf-8') +'/_/@/_'.encode('utf-8') + startdate.encode('utf-8')  +'/_/@/_'.encode('utf-8') + enddate.encode('utf-8')
     searchImage = byteimage + anexData
     client_socket.send(searchImage)  # send message
     response = client_socket.recv(2097152)  # receive response
