@@ -22,7 +22,6 @@ def client_program():
     client_socket.connect((host, port))  # connect to the server
     while True:
         ret, frame = video_capture.read(0)
-        print(type(frame))
         # Resize frame of video to 1/4 size for faster face recognition processing
         #small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
@@ -35,9 +34,15 @@ def client_program():
         anexData = '/_/@/_'.encode('utf8') + str(rgb_small_frame.shape[1]).encode('utf8')  +'/_/@/_'.encode('utf8') + str(rgb_small_frame.shape[0]).encode('utf8') +'/_/@/_'.encode('utf8') + date_time.encode('utf8')  
         bytes_rgb_small_frame =  rgb_small_frame.tobytes()
         bytes_rgb_small_frame = bytes_rgb_small_frame + anexData
-
+        now = datetime.now()
+        before = now.strftime("%S.%f")
         client_socket.send(bytes_rgb_small_frame)  # send message
         response = client_socket.recv(2097152)  # receive response
+        now = datetime.now()
+        after = now.strftime("%S.%f")
+        delay = float(after)-float(before)
+        
+        print(str(delay))
         try:
             frameResult = Image.frombytes("RGB", (rgb_small_frame.shape[1],rgb_small_frame.shape[0]), response)
             frameResult = np.array(frameResult)

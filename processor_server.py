@@ -27,29 +27,22 @@ def generate_video(images:list, now):
     date_time: str = now.strftime("%H_%M_%S")
     monthVal: str  = now.strftime("%m")
     dayVal: str  = now.strftime("%d")
-    #tempPath = f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\footage\\{monthVal}\\tempframe' 
-    vidPath = f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\footage\\{monthVal}\\{dayVal}' # make sure to use your folder 
-    video_name = f'footage_{date_time}.avi'
+    #tempPath = f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\footage\\{monthVal}\\tempframe' 
+    vidPath = f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\footage\\{monthVal}\\{dayVal}' # make sure to use your folder 
+    video_name = f'footage_{date_time}'
     os.chdir(vidPath) 
-  
-    frame =  np.array(images[0])
-    frame = frame[:, :, ::-1].copy() 
-  
-    # setting the frame width, height width 
-    # the width, height of first image 
-    height, width, layers = frame.shape 
-  
-    video = cv2.VideoWriter(video_name, 0, 5, (width, height))  
-  
-    # Appending the images to the video one by one 
+    os.mkdir(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\footage\\{monthVal}\\{dayVal}\\{video_name}')
+    counter = 1
+
     for image in images: 
         image = np.array(image)
         image = image[:, :, ::-1].copy() 
-        video.write(image)  
-      
+        image = Image.fromarray(image)
+        image.save(f"C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\footage\\{monthVal}\\{dayVal}\\{video_name}\\{counter}.png")
+        counter += 1
+
     # Deallocating memories taken for window creation 
-    cv2.destroyAllWindows()  
-    video.release()  # releasing the video generated 
+    cv2.destroyAllWindows()   # releasing the video generated 
 
 def server_program():
     # get the hostname
@@ -129,8 +122,8 @@ def server_program():
         i: int = 0   
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
-            blacklist = face_recognition.compare_faces(blacklist_face_encodings, face_encoding,tolerance=0.5)
-            record = face_recognition.compare_faces(record_face_encodings, face_encoding,tolerance=0.5)
+            blacklist = face_recognition.compare_faces(blacklist_face_encodings, face_encoding,tolerance=0.65)
+            record = face_recognition.compare_faces(record_face_encodings, face_encoding,tolerance=0.65)
             name: str = "Unknown"
             confidence: str = '???'
 
@@ -209,18 +202,18 @@ def server_program():
         frameServer.tobytes()
         conn.send(frameServer)  # send data to the client
         anexInfo = preciseTime + '@' + keyfacedata
-        file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'a')
+        file = open(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'a')
         file.write(anexInfo + "\n")
         file.close() 
     conn.close()  # close the connection
     now = datetime.now()
     date_time: str = now.strftime("%H_%M_%S")
-    source_file =  open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'rb')
-    destination_file = open(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\KDInfo_{date_time}.txt', 'wb')
+    source_file =  open(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt', 'rb')
+    destination_file = open(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\KDInfo_{date_time}.txt', 'wb')
     shutil.copyfileobj(source_file, destination_file)
     source_file.close()
     destination_file.close()
-    os.remove(f'C:\\Users\\david\\Documents\\GitProjects\\FYP\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt')
+    os.remove(f'C:\\Users\\david\\Documents\\GitProjects\\CCTV_PrivacyMasking\\KDInfo\\{monthVal}\\{dayVal}\\tempInfo.txt')
     generate_video(images ,now)
     
 
@@ -228,3 +221,7 @@ def server_program():
 #TODO make it so that the naming convention for the blacklisted faces is "PersonName_DateTheyWereBlacklisted"
 if __name__ == '__main__':
     server_program()
+
+
+
+

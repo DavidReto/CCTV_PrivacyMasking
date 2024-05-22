@@ -82,7 +82,7 @@ def server_program():
                                     ls_face_encodings.append(saved_face_encoding)
                                 except:
                                     print("The Image either does't contain a face or the code can't identify one") 
-                                matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.5)
+                                matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.7)
                                 if matches[0]== True:
                                     daydictID[image[7:-4]] = day                           
                 else:
@@ -97,7 +97,7 @@ def server_program():
                                         ls_face_encodings.append(saved_face_encoding)
                                     except:
                                         print("The Image either does't contain a face or the code can't identify one") 
-                                    matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.5)
+                                    matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.7)
                                     if matches[0]== True:
                                         daydictID[image[7:-4]] = day
                     elif int(month) == endmonth:
@@ -111,7 +111,7 @@ def server_program():
                                         ls_face_encodings.append(saved_face_encoding)
                                     except:
                                         print("The Image either does't contain a face or the code can't identify one") 
-                                    matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.5)
+                                    matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.7)
                                     if matches[0]== True:
                                         daydictID[image[7:-4]] = day
                     else:
@@ -124,7 +124,7 @@ def server_program():
                                         ls_face_encodings.append(saved_face_encoding)
                                     except:
                                         print("The Image either does't contain a face or the code can't identify one") 
-                                    matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.5)
+                                    matches = face_recognition.compare_faces(ls_face_encodings, sample_face_encoding,tolerance=0.7)
                                     if matches[0]== True:
                                         daydictID[image[7:-4]] = day
             monthdictID[month] = daydictID
@@ -146,7 +146,7 @@ def server_program():
                             for file in os.listdir(f"KDInfo/{month}/{day}"):
                                 f = open(f"KDInfo/{month}/{day}/{file}", "r")
                                 logname = file.replace('KDInfo', 'footage')
-                                logname = logname.replace('txt', 'avi')
+                                logname = logname.replace('txt', '')
                                 lines = f.readlines()
                                 perframedict: dict = {}
                                 framecount: int = 1
@@ -180,7 +180,7 @@ def server_program():
                                 for file in os.listdir(f"KDInfo/{month}/{day}"):
                                     f = open(f"KDInfo/{month}/{day}/{file}", "r")
                                     logname = file.replace('KDInfo', 'footage')
-                                    logname = logname.replace('txt', 'avi')
+                                    logname = logname.replace('txt', '')
                                     lines = f.readlines()
                                     perframedict: dict = {}
                                     framecount: int = 1
@@ -213,7 +213,7 @@ def server_program():
                                 for file in os.listdir(f"KDInfo/{month}/{day}"):
                                     f = open(f"KDInfo/{month}/{day}/{file}", "r")
                                     logname = file.replace('KDInfo', 'footage')
-                                    logname = logname.replace('txt', 'avi')
+                                    logname = logname.replace('txt', '')
                                     lines = f.readlines()
                                     perframedict: dict = {}
                                     framecount: int = 1
@@ -245,7 +245,7 @@ def server_program():
                             for file in os.listdir(f"KDInfo/{month}/{day}"):
                                 f = open(f"KDInfo/{month}/{day}/{file}", "r")
                                 logname = file.replace('KDInfo', 'footage')
-                                logname = logname.replace('txt', 'avi')
+                                logname = logname.replace('txt', '')
                                 lines = f.readlines()
                                 perframedict: dict = {}
                                 framecount: int = 1
