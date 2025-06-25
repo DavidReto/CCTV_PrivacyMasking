@@ -12,6 +12,7 @@ from Crypto.Random import get_random_bytes
 from numpy import asarray
 from datetime import datetime
 
+# Helper function to determine the date separator in the start date string
 def checkstartformat(startdate:str):
     if "." in startdate:
         startbreakformat = "."
@@ -20,6 +21,7 @@ def checkstartformat(startdate:str):
     elif "/" in startdate:
         startbreakformat = "/"
     return startbreakformat
+# Helper function to determine the date separator in the end date string
 def checkendformat(enddate:str):
     if "." in enddate:
         endbreakformat = "."
@@ -28,17 +30,17 @@ def checkendformat(enddate:str):
     elif "/" in enddate:
         endbreakformat = "/"
     return endbreakformat
+# Main server function: receives an image and date range, searches for matching faces in the database, and retrieves keys/IVs
 def server_program():
-    # get the hostname
+    # Set up the server socket
     host = socket.gethostname()
     port = 5000  # initiate port no above 1024
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # get instance
-    # look closely. The bind() function takes tuple as argument
     server_socket.bind((host, port))  # bind host address and port together
-    # configure how many client the server can listen simultaneously
-    server_socket.listen(1)
+    server_socket.listen(1)  # listen for a single client
     conn, address = server_socket.accept()  # accept new connection
     print("Connection from: " + str(address))
+    # Receive the image and metadata from the client
     data = conn.recv(2097152) 
     testlist:list = data.split('/_/@/_'.encode('utf8'))
     enddate:str = testlist.pop(-1).decode('utf8')
@@ -56,7 +58,7 @@ def server_program():
         sample_face_encoding = face_recognition.face_encodings(frameServer)[0]
     except:
         conn.send("Our Program can't seem to detect a face in the image you provided, please provide a more clear sample".encode())
-
+    # Parse the start and end dates
     liststart:list = startdate.split(checkstartformat(startdate))
     listend:list = enddate.split(checkendformat(enddate))
     startday:int = int(liststart[0])
@@ -65,6 +67,7 @@ def server_program():
     endmonth:int = int(listend[1])
     monthdictID:dict = {}
     framecount = 0
+    # Search through the faces directory for matching faces within the date range
     for month in os.listdir('faces'):
         daydictID:dict = {}
         try:
@@ -130,7 +133,7 @@ def server_program():
             monthdictID[month] = daydictID
         except:
            ...
-    #Here we start to retrieve the keys from the log files so we can then apply them on the videos
+    # Retrieve keys and IVs from log files for the matched faces
     permonthdict:dict = {}
     monthcount = 1
     for month in os.listdir('KDInfo'):
@@ -272,6 +275,7 @@ def server_program():
                             perdaydict[daycount] = pervideodict
                             daycount += 1
             else:
+                # If no matches, fill with empty data
                 perfacedict: dict = {}
                 perframedict: dict = {}
                 pervideodict: dict = {}
@@ -285,6 +289,7 @@ def server_program():
                 pervideodict[0] = perframedict
                 perdaydict[0] = pervideodict
         except:
+            # If error, fill with empty data
             perfacedict: dict = {}
             perfacedict[f'frame_1'] = {
                                     "key": "",
@@ -296,9 +301,6 @@ def server_program():
             perdaydict[0] = pervideodict
         permonthdict[monthcount] = perdaydict
         monthcount += 1
-
-
-            
 
 if __name__ == '__main__':
     server_program()

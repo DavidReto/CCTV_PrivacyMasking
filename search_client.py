@@ -12,6 +12,7 @@ from tkinter import *
 from tkinter import Tk     # from tkinter import Tk for Python 3.x
 from tkinter.filedialog import askopenfilename
 
+# Function to handle the image search process, including date validation and file selection
 def imagesearch(): 
     global startdate
     global enddate
@@ -26,8 +27,8 @@ def imagesearch():
         return filename ,startdatefunc ,enddatefunc
     else:
         print('Wrong format')  
+# Function to send the selected image and date range to the server and receive a response
 def client_program(filename:str ,startdate:str ,enddate:str ):
-    
     host = socket.gethostname()  # as both code is running on same pc
     port = 5000  # socket server port number
     client_socket = socket.socket()  # instantiate
@@ -36,11 +37,13 @@ def client_program(filename:str ,startdate:str ,enddate:str ):
     frameResult = np.array(im)
     frameResult = cv2.cvtColor(frameResult, cv2.COLOR_BGR2RGB)
     byteimage = frameResult.tobytes()
+    # Prepare metadata: width, height, start date, end date
     anexData = '/_/@/_'.encode('utf8')+ str(frameResult.shape[1]).encode('utf8') + '/_/@/_'.encode('utf8')+ str(frameResult.shape[0]).encode('utf8') +'/_/@/_'.encode('utf8') + startdate.encode('utf8')  +'/_/@/_'.encode('utf8') + enddate.encode('utf8')
     searchImage = byteimage + anexData
     client_socket.send(searchImage)  # send message
     response = client_socket.recv(2097152)  # receive response
 
+# Set up the GUI for the search client
 sys.path.append('.')
 root = Tk()
 root.geometry("500x100")
