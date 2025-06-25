@@ -25,12 +25,12 @@ def handle_client(conn, addr, camera_id):
             frame = pickle.loads(frame_data)
 
             # Display each camera in a different window
-            cv2.imshow(f"Camera {camera_id}", frame)
+            cv2.imwrite(f"camera_{camera_id}_frame.jpg", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
         except Exception as e:
-            print(f"❌ Lost connection with Camera {camera_id}: {e}")
+            print(f"Lost connection with Camera {camera_id}: {e}")
             break
 
     conn.close()

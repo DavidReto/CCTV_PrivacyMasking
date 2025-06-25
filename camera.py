@@ -24,7 +24,7 @@ try:
         data = pickle.dumps(frame)
 
         # Pack message with a header (message size)
-        message = struct.pack("", len(data)) + data
+        message = struct.pack("Q", len(data)) + data
 
         # Send to server
         client_socket.sendall(message)
